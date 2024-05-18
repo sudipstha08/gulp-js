@@ -1,0 +1,1 @@
+{"version":3,"sources":["styles.scss"],"names":[],"mappings":"AAEA,KACE,YAAA,KAAA,CAAA,WACA,MAJW,KAMX,QACE,MAAA","file":"styles.css","sourcesContent":["$body-color: #333;\n\nbody {\n  font-family: Arial, sans-serif;\n  color: $body-color;\n\n  h1 {\n    color: blue;\n  }\n}"]}
