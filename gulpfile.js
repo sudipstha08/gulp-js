@@ -1,12 +1,13 @@
+// gulpfile.js
+
 const gulp = require("gulp");
 const sass = require("gulp-sass")(require("sass"));
-const cleanCSS = require("gulp-clean-css");
-const uglify = require("gulp-uglify");
-const concat = require("gulp-concat");
-const sourcemaps = require("gulp-sourcemaps");
+const terser = require("gulp-terser");
+const htmlmin = require("gulp-htmlmin");
 const browserSync = require("browser-sync").create();
+const imagemin = require("gulp-imagemin");
 
-// Paths
+// Paths to source and destination folders
 const paths = {
 	html: {
 		src: "src/*.html",
@@ -20,69 +21,67 @@ const paths = {
 		src: "src/js/**/*.js",
 		dest: "dist/js/",
 	},
+	images: {
+		src: "src/images/**/*.{jpg,jpeg,png,gif,svg}",
+		dest: "dist/images",
+	},
 };
 
-// HTML task
-function html() {
-	return gulp
-		.src(paths.html.src)
-		.pipe(gulp.dest(paths.html.dest))
-		.pipe(browserSync.stream());
-}
-
-// Styles task
+// Compile Sass to CSS
 function styles() {
 	return gulp
 		.src(paths.styles.src)
-		.pipe(sourcemaps.init())
-		.pipe(sass().on("error", sass.logError))
-		.pipe(cleanCSS())
-		.pipe(sourcemaps.write("."))
+		.pipe(sass({ outputStyle: "compressed" }).on("error", sass.logError))
 		.pipe(gulp.dest(paths.styles.dest))
 		.pipe(browserSync.stream());
 }
 
-// Scripts task
+// Minify HTML
+function html() {
+	return gulp
+		.src(paths.html.src)
+		.pipe(htmlmin({ collapseWhitespace: true }))
+		.pipe(gulp.dest(paths.html.dest))
+		.pipe(browserSync.stream());
+}
+
+// Minify JavaScript
 function scripts() {
 	return gulp
-		.src(paths.scripts.src, { sourcemaps: true })
-		.pipe(concat("main.min.js"))
-		.pipe(uglify())
+		.src(paths.scripts.src)
+		.pipe(terser())
 		.pipe(gulp.dest(paths.scripts.dest))
 		.pipe(browserSync.stream());
 }
 
-// Watch files
+function images() {
+	return gulp
+		.src(paths.images.src)
+		.pipe(gulp.dest(paths.images.dest));
+}
+
+// Watch files for changes and serve
 function watchFiles() {
-	gulp.watch(paths.html.src, html);
+	browserSync.init({
+		server: {
+			baseDir: "dist",
+		},
+		port: 3001,
+	});
 	gulp.watch(paths.styles.src, styles);
+	gulp.watch(paths.html.src, html);
 	gulp.watch(paths.scripts.src, scripts);
 }
 
-// BrowserSync
-function browserSyncServe(cb) {
-	browserSync.init({
-		server: {
-			baseDir: "dist/",
-		},
-	});
-	cb();
-}
-
-// BrowserSync Reload
-function browserSyncReload(cb) {
-	browserSync.reload();
-	cb();
-}
-
 // Define complex tasks
-const build = gulp.series(gulp.parallel(html, styles, scripts));
-const watch = gulp.series(build, gulp.parallel(watchFiles, browserSyncServe));
+const build = gulp.series(gulp.parallel(styles, html, scripts));
+const watch = gulp.series(build, watchFiles);
 
-// Export tasks
-exports.html = html;
+// Export tasks to the Gulp CLI
 exports.styles = styles;
+exports.html = html;
 exports.scripts = scripts;
+exports.images = images;
 exports.build = build;
 exports.watch = watch;
 exports.default = watch;
